@@ -114,7 +114,10 @@ func NewClient(config *model.RunConfig, index int64) (*Client, error) {
 }
 
 func (c *Client) Authenticate() error {
-	identityData := map[string]string{"mac": c.MACAddress}
+	identityData := make(map[string]string)
+	if !c.Config.OmitMACFromIdentity {
+		identityData["mac"] = c.MACAddress
+	}
 	for k, v := range c.Config.ExtraIdentity {
 		identityData[k] = v
 	}

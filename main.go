@@ -74,6 +74,10 @@ func doMain(args []string) {
 							"format",
 						Value: "ff",
 					},
+					&cli.BoolFlag{
+						Name:  "no-mac-identity",
+						Usage: "Omit MAC address from device identity (requires at least one --identity-attribute)",
+					},
 					&cli.StringFlag{
 						Name:  "device-type",
 						Usage: "Device type",
@@ -177,6 +181,7 @@ func cmdRun(args *cli.Context) error {
 		KeyFile:                   args.String("key-file"),
 		StartTime:                 time.Duration(args.Int("start-time")) * time.Second,
 		MACAddressPrefix:          args.String("mac-address-prefix"),
+		OmitMACFromIdentity:       args.Bool("no-mac-identity"),
 		ArtifactName:              args.String("artifact-name"),
 		DeviceType:                args.String("device-type"),
 		RootfsImageChecksum:       args.String("rootfs-image-checksum"),
@@ -208,6 +213,9 @@ func cmdRun(args *cli.Context) error {
 			return fmt.Errorf("invalid argument --identity-attribute: %s", attr)
 		}
 		config.ExtraIdentity[keyValue[0]] = keyValue[1]
+	}
+	if config.OmitMACFromIdentity && len(config.ExtraIdentity) == 0 {
+		return fmt.Errorf("--no-mac-identity requires at least one --identity-attribute")
 	}
 	return run(config)
 }

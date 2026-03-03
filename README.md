@@ -43,6 +43,7 @@ OPTIONS:
    --start-time value                  Start up time in seconds; the clients will spwan uniformly in the given amount of time (default: 10)
    --key-file value                    Path to the key file to use (default: "private.key")
    --mac-address-prefix value          MAC addresses first byte prefix, in hex format (default: "ff")
+   --no-mac-identity                   Omit MAC address from device identity (requires at least one --identity-attribute)
    --device-type value                 Device type (default: "test")
    --rootfs-image-checksum value       Checksum of the rootfs image (default: "4d480539cdb23a4aee6330ff80673a5af92b7793eb1c57c4694532f96383b619")
    --artifact-name value               Name of the current installed artifact (default: "original")
@@ -53,6 +54,8 @@ OPTIONS:
    --inventory-interval value          Inventory poll interval in seconds (default: 1800)
    --update-interval value             Update poll interval in seconds (default: 600)
    --deployment-time value             Wait time between deployment steps (downloading, installing, rebooting, success) (default: 30)
+   --exit-when-done                    Exit when no update is found or when a deployment completes successfully
+   --failure-after value               Report failure after this phase: downloading, installing, or rebooting
    --websocket                         Enable websocket mode
    --debug                             Enable debug mode
   ```
