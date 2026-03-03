@@ -23,6 +23,7 @@ type RunConfig struct {
 	Count                     int64
 	KeyFile                   string
 	MACAddressPrefix          string
+	OmitMACFromIdentity       bool
 	DeviceType                string
 	ArtifactName              string
 	RootfsImageChecksum       string
