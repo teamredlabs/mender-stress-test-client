@@ -26,6 +26,11 @@ import (
 	"github.com/teamredlabs/mender-stress-test-client/model"
 )
 
+const (
+	defaultArtifactName    = "original"
+	menderArtifactNamePath = "/etc/mender/artifact_name"
+)
+
 func main() {
 	doMain(os.Args)
 }
@@ -92,7 +97,6 @@ func doMain(args []string) {
 					&cli.StringFlag{
 						Name:  "artifact-name",
 						Usage: "Name of the current installed artifact",
-						Value: "original",
 					},
 					&cli.StringSliceFlag{
 						Name: "inventory-attribute",
@@ -176,13 +180,15 @@ func cmdRun(args *cli.Context) error {
 	if len(t) > 0 {
 		p = &t
 	}
+	artifactName := resolveArtifactName(args)
+
 	config := &model.RunConfig{
 		Count:                     args.Int64("count"),
 		KeyFile:                   args.String("key-file"),
 		StartTime:                 time.Duration(args.Int("start-time")) * time.Second,
 		MACAddressPrefix:          args.String("mac-address-prefix"),
 		OmitMACFromIdentity:       args.Bool("no-mac-identity"),
-		ArtifactName:              args.String("artifact-name"),
+		ArtifactName:              artifactName,
 		DeviceType:                args.String("device-type"),
 		RootfsImageChecksum:       args.String("rootfs-image-checksum"),
 		InventoryAttributes:       args.StringSlice("inventory-attribute"),
@@ -218,4 +224,34 @@ func cmdRun(args *cli.Context) error {
 		return fmt.Errorf("--no-mac-identity requires at least one --identity-attribute")
 	}
 	return run(config)
+}
+
+func resolveArtifactName(args *cli.Context) string {
+	if args.IsSet("artifact-name") {
+		return args.String("artifact-name")
+	}
+
+	content, err := os.ReadFile(menderArtifactNamePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return defaultArtifactName
+		}
+		log.WithError(err).Warnf("failed to read %s, using default artifact name", menderArtifactNamePath)
+		return defaultArtifactName
+	}
+
+	const prefix = "artifact_name="
+	line := strings.TrimSpace(string(content))
+	if !strings.HasPrefix(line, prefix) {
+		log.Warnf("invalid artifact name file format in %s, using default artifact name", menderArtifactNamePath)
+		return defaultArtifactName
+	}
+
+	name := strings.TrimSpace(strings.TrimPrefix(line, prefix))
+	if name == "" {
+		log.Warnf("empty artifact name in %s, using default artifact name", menderArtifactNamePath)
+		return defaultArtifactName
+	}
+
+	return name
 }
