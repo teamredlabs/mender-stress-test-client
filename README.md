@@ -86,9 +86,11 @@ the same key it had on the previous run.
 
 * As mentioned, the client has no state! This implies that it can be 'updated'
 with an artifact, but it will keep track of the current installed artifact in memory.
-When restarted, the clients will report the original artifact name as specified
-by the `--artifact-name` option again. The update is always discarded on the client
-side (it is not downloaded nor parsed by mender-artifact).
+When an update completes successfully, the client also writes the pulled artifact
+name to `/etc/mender/artifact_name` (format: `artifact_name=<name>`). On restart,
+if `--artifact-name` is not specified, this persisted value is used. The update is
+still discarded on the client side (it is not downloaded nor parsed by
+mender-artifact).
 
 * It reports the update phases, _downloading_, _installing_, _rebooting_ and
 _success_. The client's time between each of these stages is determined

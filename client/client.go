@@ -27,6 +27,7 @@ import (
 	"io"
 	mathrand "math/rand"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -47,6 +48,7 @@ const urlDeploymentsNext = "/api/devices/v1/deployments/device/deployments/next"
 const urlDeploymentsStatus = "/api/devices/v1/deployments/device/deployments/{id}/status"
 
 const websocketReconnectionIntervalInSeconds = 60
+const menderArtifactNamePath = "/etc/mender/artifact_name"
 
 const (
 	statusDownloading = "downloading"
@@ -394,18 +396,23 @@ func (c *Client) UpdateCheck() error {
 			return err
 		}
 
-		err = c.Deployment(response.ID)
+		deploymentSucceeded, err := c.Deployment(response.ID)
 		if err != nil {
 			return err
 		}
 
-		// report the new artifact name
-		if response.Artifact != nil {
+		// Update local/persisted artifact only after successful deployment.
+		if deploymentSucceeded && response.Artifact != nil {
 			c.ArtifactName = response.Artifact.Name
+			if err := persistArtifactName(c.ArtifactName); err != nil {
+				log.WithError(err).Warnf("[%s] failed to persist artifact name to %s", c.MACAddress, menderArtifactNamePath)
+			}
 		}
-		err = c.SendInventory()
-		if err != nil {
-			return err
+		if deploymentSucceeded {
+			err = c.SendInventory()
+			if err != nil {
+				return err
+			}
 		}
 	}
 	
@@ -423,8 +430,9 @@ func (c *Client) UpdateCheck() error {
 	return nil
 }
 
-func (c *Client) Deployment(deploymentID string) error {
+func (c *Client) Deployment(deploymentID string) (bool, error) {
 	statusURL := strings.Replace(urlDeploymentsStatus, "{id}", deploymentID, 1)
+	deploymentSucceeded := true
 
 	statuses := []string{
 		statusDownloading,
@@ -441,14 +449,14 @@ func (c *Client) Deployment(deploymentID string) error {
 		body, err := json.Marshal(deploymentNextRequest)
 		if err != nil {
 			log.Errorf("[%s] %s", c.MACAddress, err)
-			return err
+			return false, err
 		}
 
 		req, err := http.NewRequest(http.MethodPut, c.Config.ServerURL+statusURL,
 			bytes.NewBuffer(body))
 		if err != nil {
 			log.Errorf("[%s] %s", c.MACAddress, err)
-			return err
+			return false, err
 		}
 		req.Header.Add("Content-Type", "application/json")
 		req.Header.Add("Authorization", "Bearer "+c.JWTToken)
@@ -460,7 +468,7 @@ func (c *Client) Deployment(deploymentID string) error {
 		}
 		if err != nil {
 			log.Errorf("[%s] %s", c.MACAddress, err)
-			return err
+			return false, err
 		}
 		elapsed := time.Since(start).Milliseconds()
 
@@ -469,7 +477,7 @@ func (c *Client) Deployment(deploymentID string) error {
 
 		// unauthorized
 		if response.StatusCode == http.StatusUnauthorized {
-			return errUnauthorized
+			return false, errUnauthorized
 		}
 
 		time.Sleep(c.Config.DeploymentTime)
@@ -480,13 +488,13 @@ func (c *Client) Deployment(deploymentID string) error {
 			body, err := json.Marshal(&model.DeploymentStatus{Status: statusFailure})
 			if err != nil {
 				log.Errorf("[%s] %s", c.MACAddress, err)
-				return err
+				return false, err
 			}
 			req, err := http.NewRequest(http.MethodPut, c.Config.ServerURL+statusURL,
 				bytes.NewBuffer(body))
 			if err != nil {
 				log.Errorf("[%s] %s", c.MACAddress, err)
-				return err
+				return false, err
 			}
 			req.Header.Add("Content-Type", "application/json")
 			req.Header.Add("Authorization", "Bearer "+c.JWTToken)
@@ -496,12 +504,13 @@ func (c *Client) Deployment(deploymentID string) error {
 			}
 			if err != nil {
 				log.Errorf("[%s] %s", c.MACAddress, err)
-				return err
+				return false, err
 			}
 			if response.StatusCode == http.StatusUnauthorized {
-				return errUnauthorized
+				return false, errUnauthorized
 			}
 			log.Debugf("[%s] %-40s %d", c.MACAddress, "deployment-status: "+statusFailure, response.StatusCode)
+			deploymentSucceeded = false
 			break
 		}
 	}
@@ -514,7 +523,12 @@ func (c *Client) Deployment(deploymentID string) error {
 		}
 	}
 
-	return nil
+	return deploymentSucceeded, nil
+}
+
+func persistArtifactName(artifactName string) error {
+	content := fmt.Sprintf("artifact_name=%s\n", artifactName)
+	return os.WriteFile(menderArtifactNamePath, []byte(content), 0o644)
 }
 
 func (c *Client) StartWebsocket(websocketMessages chan *ws.ProtoMsg) {
