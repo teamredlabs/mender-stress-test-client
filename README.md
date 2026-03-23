@@ -73,7 +73,9 @@ command-line options of the current device and current artifact are used to
 build the _update request to the server_, and hence specify dummy names,
 so that one can mismatch on the Artifact name, and match on the client type. In
 general, these flags should match up, though, and hence be the same. If not
-specified, these will default to the device type *test* and the artifact name *original*.
+specified, these will default to the device type *test* and the artifact name from
+`/etc/mender/artifact_name` (format: `artifact_name=<name>`), falling back to
+*original* if the file is missing or invalid.
 
 * As mentioned above, in general, the client has **no** state. However, this is
 not wholly true, as the client will generate a private key and use it on subsequent
