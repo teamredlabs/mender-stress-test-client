@@ -48,7 +48,7 @@ const urlDeploymentsNext = "/api/devices/v1/deployments/device/deployments/next"
 const urlDeploymentsStatus = "/api/devices/v1/deployments/device/deployments/{id}/status"
 
 const websocketReconnectionIntervalInSeconds = 60
-const menderArtifactNamePath = "/etc/mender/artifact_name"
+const menderArtifactInfoPath = "/etc/mender/artifact_info"
 
 const (
 	statusDownloading = "downloading"
@@ -405,7 +405,7 @@ func (c *Client) UpdateCheck() error {
 		if deploymentSucceeded && response.Artifact != nil {
 			c.ArtifactName = response.Artifact.Name
 			if err := persistArtifactName(c.ArtifactName); err != nil {
-				log.WithError(err).Warnf("[%s] failed to persist artifact name to %s", c.MACAddress, menderArtifactNamePath)
+				log.WithError(err).Warnf("[%s] failed to persist artifact name to %s", c.MACAddress, menderArtifactInfoPath)
 			}
 		}
 		if deploymentSucceeded {
@@ -528,7 +528,7 @@ func (c *Client) Deployment(deploymentID string) (bool, error) {
 
 func persistArtifactName(artifactName string) error {
 	content := fmt.Sprintf("artifact_name=%s\n", artifactName)
-	return os.WriteFile(menderArtifactNamePath, []byte(content), 0o644)
+	return os.WriteFile(menderArtifactInfoPath, []byte(content), 0o644)
 }
 
 func (c *Client) StartWebsocket(websocketMessages chan *ws.ProtoMsg) {
