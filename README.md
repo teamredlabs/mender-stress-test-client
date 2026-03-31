@@ -74,7 +74,7 @@ build the _update request to the server_, and hence specify dummy names,
 so that one can mismatch on the Artifact name, and match on the client type. In
 general, these flags should match up, though, and hence be the same. If not
 specified, these will default to the device type *test* and the artifact name from
-`/etc/mender/artifact_name` (format: `artifact_name=<name>`), falling back to
+`/etc/mender/artifact_info` (format: `artifact_name=<name>`), falling back to
 *original* if the file is missing or invalid.
 
 * As mentioned above, in general, the client has **no** state. However, this is
@@ -87,7 +87,7 @@ the same key it had on the previous run.
 * As mentioned, the client has no state! This implies that it can be 'updated'
 with an artifact, but it will keep track of the current installed artifact in memory.
 When an update completes successfully, the client also writes the pulled artifact
-name to `/etc/mender/artifact_name` (format: `artifact_name=<name>`). On restart,
+name to `/etc/mender/artifact_info` (format: `artifact_name=<name>`). On restart,
 if `--artifact-name` is not specified, this persisted value is used. The update is
 still discarded on the client side (it is not downloaded nor parsed by
 mender-artifact).

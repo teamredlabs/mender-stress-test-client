@@ -28,7 +28,7 @@ import (
 
 const (
 	defaultArtifactName    = "original"
-	menderArtifactNamePath = "/etc/mender/artifact_name"
+	menderArtifactInfoPath = "/etc/mender/artifact_info"
 )
 
 func main() {
@@ -231,25 +231,25 @@ func resolveArtifactName(args *cli.Context) string {
 		return args.String("artifact-name")
 	}
 
-	content, err := os.ReadFile(menderArtifactNamePath)
+	content, err := os.ReadFile(menderArtifactInfoPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return defaultArtifactName
 		}
-		log.WithError(err).Warnf("failed to read %s, using default artifact name", menderArtifactNamePath)
+		log.WithError(err).Warnf("failed to read %s, using default artifact name", menderArtifactInfoPath)
 		return defaultArtifactName
 	}
 
 	const prefix = "artifact_name="
 	line := strings.TrimSpace(string(content))
 	if !strings.HasPrefix(line, prefix) {
-		log.Warnf("invalid artifact name file format in %s, using default artifact name", menderArtifactNamePath)
+		log.Warnf("invalid artifact name file format in %s, using default artifact name", menderArtifactInfoPath)
 		return defaultArtifactName
 	}
 
 	name := strings.TrimSpace(strings.TrimPrefix(line, prefix))
 	if name == "" {
-		log.Warnf("empty artifact name in %s, using default artifact name", menderArtifactNamePath)
+		log.Warnf("empty artifact name in %s, using default artifact name", menderArtifactInfoPath)
 		return defaultArtifactName
 	}
 
