@@ -394,29 +394,51 @@ func (c *Client) UpdateCheck() error {
 			return err
 		}
 
-		response := &model.DeploymentNextResponse{}
-		err = json.Unmarshal(body, response)
+		deploymentNextResponse := &model.DeploymentNextResponse{}
+		err = json.Unmarshal(body, deploymentNextResponse)
 		if err != nil {
 			log.Errorf("[%s] %s", c.MACAddress, err)
 			return err
 		}
 
-		deploymentSucceeded, err := c.Deployment(response.ID)
+		// validate deployment next response
+		if deploymentNextResponse.ID == "" {
+			return errors.New("next deployment found but ID is empty")
+		}
+		if deploymentNextResponse.Artifact == nil {
+			return errors.New("next deployment found but artifact is nil")
+		}
+		if deploymentNextResponse.Artifact.Name == "" {
+			return errors.New("next deployment found but artifact name is empty")
+		}
+
+		deploymentSucceeded, err := c.Deployment(deploymentNextResponse.ID)
 		if err != nil {
 			return err
 		}
 
-		// Update local/persisted artifact only after successful deployment.
-		if deploymentSucceeded && response.Artifact != nil {
-			c.ArtifactName = response.Artifact.Name
-			if err := persistArtifactName(c.ArtifactName); err != nil {
-				log.WithError(err).Warnf("[%s] failed to persist artifact name to %s", c.MACAddress, menderArtifactInfoPath)
-			}
-		}
+		// deployment succeeded
 		if deploymentSucceeded {
+			// assume new artifact name
+			c.ArtifactName = deploymentNextResponse.Artifact.Name
+
+			// update local artifact name
+			if err = persistArtifactName(c.ArtifactName); err != nil {
+				return err
+			}
+
+			// update remote artifact name
 			err = c.SendInventory()
 			if err != nil {
 				return err
+			}
+
+			// signal exit when --exit-when-done is set
+			if c.Config.ExitOnDone != nil {
+				select {
+				case c.Config.ExitOnDone <- struct{}{}:
+				default:
+				}
 			}
 		}
 	}
@@ -430,6 +452,8 @@ func (c *Client) UpdateCheck() error {
 			default:
 			}
 		}
+
+		return nil
 	}
 
 	return nil
@@ -517,14 +541,6 @@ func (c *Client) Deployment(deploymentID string) (bool, error) {
 			log.Debugf("[%s] %-40s %d", c.MACAddress, "deployment-status: "+statusFailure, response.StatusCode)
 			deploymentSucceeded = false
 			break
-		}
-	}
-
-	// signal exit when --exit-when-done is set
-	if c.Config.ExitOnDone != nil {
-		select {
-		case c.Config.ExitOnDone <- struct{}{}:
-		default:
 		}
 	}
 
