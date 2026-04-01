@@ -61,6 +61,7 @@ const (
 const (
 	attributeRootfsImageVersion = "rootfs-image.version"
 	attributeDeviceType         = "device_type"
+	attributeArtifactName       = "artifact_name"
 )
 
 var errUnauthorized = errors.New("unauthorized")
@@ -278,6 +279,10 @@ func (c *Client) SendInventory() error {
 		{
 			Name:  attributeDeviceType,
 			Value: c.Config.DeviceType,
+		},
+		{
+			Name:  attributeArtifactName,
+			Value: c.ArtifactName,
 		},
 	}
 	for _, attr := range c.Config.InventoryAttributes {

@@ -115,7 +115,6 @@ func doMain(args []string) {
 							"in the form of key:value1|value2 " +
 							"(values rotate on each send)",
 					},
-
 					&cli.StringSliceFlag{
 						Name: "identity-attribute",
 						Usage: "Extra identity data attributes in " +
