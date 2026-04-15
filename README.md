@@ -55,7 +55,8 @@ OPTIONS:
    --update-interval value             Update poll interval in seconds (default: 600)
    --deployment-time value             Wait time between deployment steps (downloading, installing, rebooting, success) (default: 30)
    --exit-when-done                    Exit when no update is found or when a deployment completes successfully
-   --failure-after value               Report failure after this phase: downloading, installing, or rebooting
+   --fail-after value                  Report failure after this phase: downloading, installing, or rebooting
+   --abort-after value                 Abort process after this phase: downloading, installing, or rebooting
    --websocket                         Enable websocket mode
    --debug                             Enable debug mode
   ```

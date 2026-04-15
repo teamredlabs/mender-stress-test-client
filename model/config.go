@@ -43,6 +43,6 @@ type RunConfig struct {
 	Tier                      *string
 	ExitWhenDone              bool
 	ExitOnDone                chan struct{}
-	FailureAfter              string
+	FailAfter                 string
 	AbortAfter                string
 }
