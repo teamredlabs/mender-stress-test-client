@@ -44,4 +44,5 @@ type RunConfig struct {
 	ExitWhenDone              bool
 	ExitOnDone                chan struct{}
 	FailureAfter              string
+	AbortAfter                string
 }

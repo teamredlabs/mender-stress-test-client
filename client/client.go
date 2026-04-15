@@ -62,6 +62,7 @@ const (
 	attributeRootfsImageVersion = "rootfs-image.version"
 	attributeDeviceType         = "device_type"
 	attributeArtifactName       = "artifact_name"
+	exitCodeAborted             = 6
 )
 
 var errUnauthorized = errors.New("unauthorized")
@@ -510,6 +511,12 @@ func (c *Client) Deployment(deploymentID string) (bool, error) {
 		}
 
 		time.Sleep(c.Config.DeploymentTime)
+
+		// trigger abort if --abort-after is set
+		if c.Config.AbortAfter == status {
+			log.Warnf("[%s] aborting process after deployment phase %q", c.MACAddress, status)
+			os.Exit(exitCodeAborted)
+		}
 
 		// trigger failure if --failure-after is set
 		if c.Config.FailureAfter == status {

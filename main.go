@@ -158,6 +158,10 @@ func doMain(args []string) {
 						Name:  "failure-after",
 						Usage: "Report failure after this phase: downloading, installing, or rebooting",
 					},
+					&cli.StringFlag{
+						Name:  "abort-after",
+						Usage: "Abort process after this phase: downloading, installing, or rebooting",
+					},
 				},
 			},
 		},
@@ -205,11 +209,16 @@ func cmdRun(args *cli.Context) error {
 		Tier:          p,
 		ExitWhenDone:  args.Bool("exit-when-done"),
 		FailureAfter:  args.String("failure-after"),
+		AbortAfter:    args.String("abort-after"),
 	}
 	if config.FailureAfter != "" {
-		valid := config.FailureAfter == "downloading" || config.FailureAfter == "installing" || config.FailureAfter == "rebooting"
-		if !valid {
+		if !isValidDeploymentPhase(config.FailureAfter) {
 			return fmt.Errorf("invalid --failure-after: %s (must be downloading, installing, or rebooting)", config.FailureAfter)
+		}
+	}
+	if config.AbortAfter != "" {
+		if !isValidDeploymentPhase(config.AbortAfter) {
+			return fmt.Errorf("invalid --abort-after: %s (must be downloading, installing, or rebooting)", config.AbortAfter)
 		}
 	}
 	for _, attr := range args.StringSlice("identity-attribute") {
@@ -253,4 +262,8 @@ func resolveArtifactName(args *cli.Context) string {
 	}
 
 	return name
+}
+
+func isValidDeploymentPhase(phase string) bool {
+	return phase == "downloading" || phase == "installing" || phase == "rebooting"
 }
