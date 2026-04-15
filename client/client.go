@@ -518,8 +518,8 @@ func (c *Client) Deployment(deploymentID string) (bool, error) {
 			os.Exit(exitCodeAborted)
 		}
 
-		// trigger failure if --failure-after is set
-		if c.Config.FailureAfter == status {
+		// trigger failure if --fail-after is set
+		if c.Config.FailAfter == status {
 			// report failure to server and stop this deployment
 			body, err := json.Marshal(&model.DeploymentStatus{Status: statusFailure})
 			if err != nil {

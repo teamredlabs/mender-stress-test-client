@@ -155,7 +155,7 @@ func doMain(args []string) {
 						Usage: "Exit when no update is found or when a deployment completes successfully",
 					},
 					&cli.StringFlag{
-						Name:  "failure-after",
+						Name:  "fail-after",
 						Usage: "Report failure after this phase: downloading, installing, or rebooting",
 					},
 					&cli.StringFlag{
@@ -208,12 +208,12 @@ func cmdRun(args *cli.Context) error {
 		ExtraIdentity: make(map[string]string),
 		Tier:          p,
 		ExitWhenDone:  args.Bool("exit-when-done"),
-		FailureAfter:  args.String("failure-after"),
+		FailAfter:  args.String("fail-after"),
 		AbortAfter:    args.String("abort-after"),
 	}
-	if config.FailureAfter != "" {
-		if !isValidDeploymentPhase(config.FailureAfter) {
-			return fmt.Errorf("invalid --failure-after: %s (must be downloading, installing, or rebooting)", config.FailureAfter)
+	if config.FailAfter != "" {
+		if !isValidDeploymentPhase(config.FailAfter) {
+			return fmt.Errorf("invalid --fail-after: %s (must be downloading, installing, or rebooting)", config.FailAfter)
 		}
 	}
 	if config.AbortAfter != "" {
