@@ -418,28 +418,27 @@ func (c *Client) UpdateCheck() error {
 			return err
 		}
 
-		// deployment succeeded
+		// assume new artifact name
 		if deploymentSucceeded {
-			// assume new artifact name
 			c.ArtifactName = deploymentNextResponse.Artifact.Name
+		}
 
-			// update local artifact name
-			if err = persistArtifactName(c.ArtifactName); err != nil {
-				return err
-			}
+		// update local artifact name
+		if err = persistArtifactName(c.ArtifactName); err != nil {
+			return err
+		}
 
-			// update remote artifact name
-			err = c.SendInventory()
-			if err != nil {
-				return err
-			}
+		// update remote artifact name
+		err = c.SendInventory()
+		if err != nil {
+			return err
+		}
 
-			// signal exit when --exit-when-done is set
-			if c.Config.ExitOnDone != nil {
-				select {
-				case c.Config.ExitOnDone <- struct{}{}:
-				default:
-				}
+		// signal exit when --exit-when-done is set
+		if c.Config.ExitOnDone != nil {
+			select {
+			case c.Config.ExitOnDone <- struct{}{}:
+			default:
 			}
 		}
 	}
